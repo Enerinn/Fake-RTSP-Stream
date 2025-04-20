@@ -13,6 +13,8 @@ services:
     environment:
       - RTSP_PROTOCOLS=tcp
     image: bluenviron/mediamtx
+    volumes:
+      - ./mediamtx.yml:/etc/mediamtx/mediamtx.yml 
 
 #  webcam:
 #    restart: unless-stopped
@@ -66,3 +68,17 @@ services:
     volumes:
        - ./samples/input_files/:/tmp/
     command: -re -f concat -i /tmp/concat.txt -c copy -f rtsp rtsp://rtsp-server:8554/concatenated-sample
+
+  my-video:
+    restart: unless-stopped
+    image: linuxserver/ffmpeg:version-4.4-cli
+    links:
+      - "rtsp-server:rtsp-server"
+    depends_on:
+      prepare-input-files:
+        condition: service_completed_successfully
+      rtsp-server:
+        condition: service_started
+    volumes:
+      - ./samples/input_files/:/tmp/
+    command: -re -stream_loop -1 -i /tmp/sample.ts -c copy -f rtsp rtsp://rtsp-server:8554/myvideo
